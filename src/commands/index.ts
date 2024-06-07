@@ -293,7 +293,7 @@ Input token percentage to sell tokens.`;
   };
 };
 
-export const deposit = async (chatId: number) => {
+export const deposit = async () => {
   const title = `Solana Memes Fund
   Signal identified....
   Executing trade...
@@ -321,7 +321,7 @@ export const deposit = async (chatId: number) => {
   Executing trade...
   Failed! Not enough funds. Add funds.`;
 
-  const content = [];
+  const content: any[] = [];
 
   return {
     title,
@@ -827,4 +827,3 @@ No, they are all the same bot and you can use them interchangeably.
 And Trading Bot has also the feature of addtional fee for increasing transaction priority.`;
   return title;
 };
-

@@ -1,7 +1,29 @@
 import "dotenv/config";
 import TelegramBot, { CallbackQuery } from "node-telegram-bot-api";
 
-import {commandList,welcome, settings, wallet, invest, sell, refer, help, invalid, importWallet, createWallet, invest, getTokenInfo, sell, manageBot, deposit } from "./commands";
+import {
+  commandList,
+  welcome,
+  settings,
+  wallet,
+  refer,
+  help,
+  invalid,
+  importWallet,
+  createWallet,
+  invest,
+  getTokenInfo,
+  sell,
+  manageBot,
+  deposit,
+  newSettings,
+  refreshWallet,
+  showKey,
+  confirm,
+  inputBuyAmount,
+  buyTokens,
+  inputSellAmount,
+} from "./commands";
 import { BotToken } from "./config";
 import { init } from "./commands/helper";
 import { colorLog } from "./utils/log";
@@ -259,36 +281,24 @@ bot.on("callback_query", async (query: CallbackQuery) => {
         break;
 
       case "reset":
-        await bot.sendMessage(
-          chatId,
-          (
-            await confirm("resetWallet")
-          ).title,
-          {
-            reply_markup: {
-              inline_keyboard: (await confirm("resetWallet")).content,
-              resize_keyboard: true,
-            },
-            parse_mode: "HTML",
-          }
-        );
+        await bot.sendMessage(chatId, (await confirm("resetWallet")).title, {
+          reply_markup: {
+            inline_keyboard: (await confirm("resetWallet")).content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
 
         break;
 
       case "export":
-        await bot.sendMessage(
-          chatId,
-          (
-            await confirm("exportKey")
-          ).title,
-          {
-            reply_markup: {
-              inline_keyboard: (await confirm("exportKey")).content,
-              resize_keyboard: true,
-            },
-            parse_mode: "HTML",
-          }
-        );
+        await bot.sendMessage(chatId, (await confirm("exportKey")).title, {
+          reply_markup: {
+            inline_keyboard: (await confirm("exportKey")).content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
 
         break;
 
@@ -340,9 +350,7 @@ bot.on("callback_query", async (query: CallbackQuery) => {
       case "pin":
         await bot.editMessageReplyMarkup(
           {
-            inline_keyboard: (
-              await welcome(chatId, botName, true)
-            ).content,
+            inline_keyboard: (await welcome(chatId, botName, true)).content,
           },
           {
             chat_id: chatId,
@@ -355,9 +363,7 @@ bot.on("callback_query", async (query: CallbackQuery) => {
       case "unpin":
         await bot.editMessageReplyMarkup(
           {
-            inline_keyboard: (
-              await welcome(chatId, botName, false)
-            ).content,
+            inline_keyboard: (await welcome(chatId, botName, false)).content,
           },
           {
             chat_id: chatId,
@@ -371,9 +377,7 @@ bot.on("callback_query", async (query: CallbackQuery) => {
       case "announcement":
         await bot.editMessageReplyMarkup(
           {
-            inline_keyboard: (
-              await newSettings(chatId, action)
-            ).content,
+            inline_keyboard: (await newSettings(chatId, action)).content,
           },
           {
             chat_id: chatId,
@@ -470,12 +474,7 @@ bot.on("callback_query", async (query: CallbackQuery) => {
             chatId,
             "Transaction sent. Confirming now..."
           );
-          const tx = await buyTokens(
-            chatId,
-            msg.text!,
-            address,
-            "buy"
-          );
+          const tx = await buyTokens(chatId, msg.text!, address, "buy");
           if (tx["error"]) {
             await bot.deleteMessage(chatId, txConfirm.message_id);
             if (tx.signature)
@@ -584,26 +583,7 @@ bot.on("callback_query", async (query: CallbackQuery) => {
             chatId,
             "Transaction sent. Confirming now..."
           );
-          const tx = await buyTokens(
-            chatId,
-            msg.text!,
-            address,
-            "sell"
-          );
-          // if (tx['error']) {
-          //     await bot.deleteMessage(chatId, txConfirm.message_id)
-          //     if (tx.signature) await bot.sendMessage(
-          //         chatId,
-          //         `Error : ${tx.error}`, {
-          //         reply_markup: {
-          //             inline_keyboard: [[{ text: `Transaction Link`, url: tx.signature }]],
-          //             resize_keyboard: true
-          //         }, parse_mode: 'HTML'
-          //     })
-          //     else await bot.sendMessage(
-          //         chatId,
-          //         `Error : ${tx.error}`)
-          // }
+          const tx = await buyTokens(chatId, msg.text!, address, "sell");
         });
       } else {
         const txConfirm = await bot.sendMessage(
@@ -611,20 +591,6 @@ bot.on("callback_query", async (query: CallbackQuery) => {
           "Transaction sent. Confirming now..."
         );
         const tx = await buyTokens(chatId, method, address, "sell");
-        // if (tx['error']) {
-        //     await bot.deleteMessage(chatId, txConfirm.message_id)
-        //     if (tx.signature) await bot.sendMessage(
-        //         chatId,
-        //         `Error : ${tx.error}`, {
-        //         reply_markup: {
-        //             inline_keyboard: [[{ text: `Transaction Link`, url: tx.signature }]],
-        //             resize_keyboard: true
-        //         }, parse_mode: 'HTML'
-        //     })
-        //     else await bot.sendMessage(
-        //         chatId,
-        //         `Error : ${tx.error}`)
-        // }
       }
     }
   } catch (e) {
@@ -638,6 +604,3 @@ bot.on("callback_query", async (query: CallbackQuery) => {
     });
   }
 });
-
-// await bot.answerCallbackQuery(callbackQueryId, { text: 'Input Token address to buy' })
-
