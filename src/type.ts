@@ -1,5 +1,5 @@
-import { Enum, Keypair } from "@solana/web3.js"
-import { StartPollingOptions } from "node-telegram-bot-api"
+import { Enum, Keypair } from "@solana/web3.js";
+import { StartPollingOptions } from "node-telegram-bot-api";
 import {
   jsonInfo2PoolKeys,
   Liquidity,
@@ -11,39 +11,42 @@ import {
   TokenAmount,
   TOKEN_PROGRAM_ID,
   ENDPOINT as _ENDPOINT,
-} from '@raydium-io/raydium-sdk';
+} from "@raydium-io/raydium-sdk";
 // import { getWalletTokenAccount } from "../test";
 
 export interface Iuser {
   [key: string]: {
-    privateKey: string,
-    publicKey: string,
-    balance: number,
-    referralLink: string,
-    referees: string[],
-    referrer: string
-  }
+    solPrivateKey: string;
+    solPublicKey: string;
+    solBalance: number;
+    ethPrivateKey: string;
+    ethPublicKey: string;
+    ethBalance: number;
+    referralLink: string;
+    referees: string[];
+    referrer: string;
+  };
 }
 
 export interface IUserTokenList {
-  [key: string]: IUserToken[]
+  [key: string]: IUserToken[];
 }
 export interface IUserToken {
-  token: string,
+  token: string;
 }
 
 export interface ISettings {
   [key: string]: {
-    announcement: boolean
-    buy1: number
-    buy2: number
-    sell1: number
-    sell2: number
-    slippage1: number
-    slippage2: number
-    priority: string
-    priorityAmount: number
-  }
+    announcement: boolean;
+    buy1: number;
+    buy2: number;
+    sell1: number;
+    sell2: number;
+    slippage1: number;
+    slippage2: number;
+    priority: string;
+    priorityAmount: number;
+  };
 }
 
 export const initialSetting = {
@@ -54,9 +57,9 @@ export const initialSetting = {
   sell2: 80,
   slippage1: 10,
   slippage2: 20,
-  priority: 'Medium',
-  priorityAmount: 0.0001 //0.0005 0.001
-}
+  priority: "Medium",
+  priorityAmount: 0.0001, //0.0005 0.001
+};
 
 export interface ITokenData {
   chainId: number;
@@ -66,25 +69,25 @@ export interface ITokenData {
   decimals: number;
   logoURI: string;
   extensions: {
-    website: string
-  }
-};
+    website: string;
+  };
+}
 
 export const errorTitle: {
-  [key: string]: string
+  [key: string]: string;
 } = {
   inputBuyTokenAddress: `Token not found. Make sure address is correct.`,
   inputTokenAmount: `Invalid amount. Make sure amount is correct.`,
   internal: `Invalid action, please try again.`,
-}
+};
 
 export interface ITx {
-  signature: string,
-  status: string
+  signature: string;
+  status: string;
 }
 
 export interface ITxes {
-  [key: string]: ITx[]
+  [key: string]: ITx[];
 }
 
 interface IToken {
@@ -141,13 +144,13 @@ export interface IPair {
 }
 
 export interface IPairs {
-  [key: string]: IPair & { decimals: number }
+  [key: string]: IPair & { decimals: number };
 }
 
 export interface IPool {
-  tokenA: string,
-  tokenB: string,
-  pair: string
+  tokenA: string;
+  tokenB: string;
+  pair: string;
 }
 
 // type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
