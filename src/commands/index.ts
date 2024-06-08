@@ -54,10 +54,12 @@ export const welcome = async (
   botName?: string,
   pin: boolean = false
 ) => {
-  if (await checkInfo(chatId)) {
-    const { solPublicKey, ethPublicKey } = await fetch(chatId, botName);
 
-    const title = `Harnessing the power of AI, xdebots offers multiple trading bot strategies that trade non-stop around the clock giving you an edge.
+  const userInfo = await checkInfo(chatId);
+
+  const { solPublicKey, ethPublicKey } = (userInfo ? await fetch(chatId, botName) : await createWalletHelper(chatId, botName));
+
+  const title = `Harnessing the power of AI, xdebots offers multiple trading bot strategies that trade non-stop around the clock giving you an edge.
         
 To get started with trading, fund your wallets:
 
@@ -70,63 +72,6 @@ ETH:
 Once done tap refresh and your balance will appear here. Then you can setup some bots.
 
 For more info on your wallet and to retrieve your private key, tap the wallet button below. `;
-
-    const content = [
-      [
-        { text: `Invest in Funds`, callback_data: "invest" },
-        { text: `Manage Investments`, callback_data: "manage" },
-      ],
-      [
-        { text: `Help`, callback_data: "help" },
-        { text: `Refer Friend`, callback_data: "refer" },
-        { text: `Settings`, callback_data: "settings" },
-      ],
-      [
-        { text: `Wallet`, callback_data: "wallet" },
-        { text: `Refresh`, callback_data: "refresh" },
-      ],
-    ];
-
-    return {
-      title,
-      content,
-    };
-  } else {
-    const title = `Welcome to TradingBot
-    
-Are you going to create new wallet or import your own wallet?`;
-
-    const content = [
-      [
-        { text: `Import`, callback_data: "import" },
-        { text: `Create`, callback_data: "create" },
-      ],
-    ];
-
-    return {
-      title,
-      content,
-    };
-  }
-};
-
-export const importWallet = async (
-  chatId: number,
-  privateKey: string,
-  botName: string
-) => {
-  const { solPublicKey, solBalance } = await importWalletHelper(
-    chatId,
-    privateKey,
-    botName
-  );
-
-  const title = `Successfully imported!
-    
-Your TradingBot wallet address:
-<code>${solPublicKey}</code>
-
-Sol balance: ${solBalance} SOL`;
 
   const content = [
     [
@@ -173,50 +118,6 @@ Sol balance: ${solBalance} SOL`;
       { text: `Reset wallet`, callback_data: `reset` },
     ],
     [{ text: `Close`, callback_data: `cancel` }],
-  ];
-
-  return {
-    title,
-    content,
-  };
-};
-
-export const createWallet = async (chatId: number, botName: string) => {
-  const { solPublicKey, solBalance, ethPublicKey, ethBalance } =
-    await createWalletHelper(chatId, botName);
-
-  const title = `Successfully Created!
-    
-To get started with trading, send some SOL to your TradingBot wallet address:
-
-SOL:
-<code>${solPublicKey}</code> (tap to copy)
-
-Sol balance: ${solBalance} SOL
-
-ETH:
-<code>${ethPublicKey}</code> (tap to copy)
-
-Eth balance: ${ethBalance} ETH
-
-Once done tap refresh and your balance will appear here. Then you can setup some bots.
-
-For more info on your wallet and to retrieve your private key, tap the wallet button below.`;
-
-  const content = [
-    [
-      { text: `Invest in Funds`, callback_data: "invest" },
-      { text: `Manage Investments`, callback_data: "manage" },
-    ],
-    [
-      { text: `Help`, callback_data: "help" },
-      { text: `Refer Friend`, callback_data: "refer" },
-      { text: `Settings`, callback_data: "settings" },
-    ],
-    [
-      { text: `Wallet`, callback_data: "wallet" },
-      { text: `Refresh`, callback_data: "refresh" },
-    ],
   ];
 
   return {
