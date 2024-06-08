@@ -9,8 +9,6 @@ import {
   refer,
   help,
   invalid,
-  importWallet,
-  createWallet,
   invest,
   getTokenInfo,
   sell,
@@ -163,41 +161,6 @@ bot.on("callback_query", async (query: CallbackQuery) => {
   try {
     let result;
     switch (action) {
-      case "import":
-        await bot.deleteMessage(chatId, msgId);
-        const inputmsg = await bot.sendMessage(
-          chatId,
-          `Please input your private key`
-        );
-
-        bot.once(`message`, async (msg) => {
-          await bot.deleteMessage(chatId, inputmsg.message_id);
-          await bot.deleteMessage(chatId, msg.message_id);
-          result = await importWallet(chatId, msg.text!, botName);
-          await bot.sendMessage(chatId, result.title, {
-            reply_markup: {
-              inline_keyboard: result.content,
-              resize_keyboard: true,
-            },
-            parse_mode: "HTML",
-          });
-          return;
-        });
-
-        break;
-
-      case "create":
-        await bot.deleteMessage(chatId, msgId);
-        result = await createWallet(chatId, botName);
-        await bot.sendMessage(chatId, result.title, {
-          reply_markup: {
-            inline_keyboard: result.content,
-            resize_keyboard: true,
-          },
-          parse_mode: "HTML",
-        });
-        break;
-
       case "invest":
         await bot.sendMessage(chatId, (await invest()).title, {
           reply_markup: {

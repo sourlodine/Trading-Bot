@@ -51,13 +51,14 @@ export const commandList = [
 
 export const welcome = async (
   chatId: number,
-  botName?: string,
+  botName: string,
   pin: boolean = false
 ) => {
-
   const userInfo = await checkInfo(chatId);
 
-  const { solPublicKey, ethPublicKey } = (userInfo ? await fetch(chatId, botName) : await createWalletHelper(chatId, botName));
+  const { solPublicKey, ethPublicKey } = userInfo
+    ? await fetch(chatId, botName)
+    : await createWalletHelper(chatId, botName);
 
   const title = `Harnessing the power of AI, xdebots offers multiple trading bot strategies that trade non-stop around the clock giving you an edge.
         
