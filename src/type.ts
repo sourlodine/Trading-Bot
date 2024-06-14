@@ -12,7 +12,13 @@ import {
   TOKEN_PROGRAM_ID,
   ENDPOINT as _ENDPOINT,
 } from "@raydium-io/raydium-sdk";
-// import { getWalletTokenAccount } from "../test";
+
+export interface IConfirm {
+  [key: string]: {
+    title: string;
+    content: { text: string; callback_data: string }[][];
+  };
+}
 
 export interface Iuser {
   [key: string]: {
@@ -31,6 +37,7 @@ export interface Iuser {
 export interface IUserTokenList {
   [key: string]: IUserToken[];
 }
+
 export interface IUserToken {
   token: string;
 }
@@ -72,14 +79,6 @@ export interface ITokenData {
     website: string;
   };
 }
-
-export const errorTitle: {
-  [key: string]: string;
-} = {
-  inputBuyTokenAddress: `Token not found. Make sure address is correct.`,
-  inputTokenAmount: `Invalid amount. Make sure amount is correct.`,
-  internal: `Invalid action, please try again.`,
-};
 
 export interface ITx {
   signature: string;
@@ -152,14 +151,3 @@ export interface IPool {
   tokenB: string;
   pair: string;
 }
-
-// type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
-
-// export type TestTxInputInfo = {
-//   outputToken: Token
-//   targetPool: string
-//   inputTokenAmount: CurrencyAmount
-//   slippage: Percent
-//   walletTokenAccounts: WalletTokenAccounts
-//   wallet: Keypair
-// }

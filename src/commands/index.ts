@@ -1,65 +1,16 @@
-import { errorTitle } from "../type";
-import {
-  buyTokenHelper,
-  checkInfo,
-  checkValidAddr,
-  createWalletHelper,
-  fetch,
-  getAllTokenList,
-  getSetting,
-  getTokenBalance,
-  importWalletHelper,
-  setSettings,
-} from "./helper";
-import axios from "axios";
-
-interface IConfirm {
-  [key: string]: {
-    title: string;
-    content: { text: string; callback_data: string }[][];
-  };
-}
-
-const confirmList: IConfirm = {
-  exportKey: {
-    title: "Are you sure you want to export your Private Key?",
-    content: [
-      [
-        { text: `Confirm`, callback_data: `show` },
-        { text: `Cancel`, callback_data: `cancel` },
-      ],
-    ],
-  },
-  resetWallet: {
-    title: "Are you sure you want to reset your wallet?",
-    content: [
-      [
-        { text: `Reset Wallet`, callback_data: `import` },
-        { text: `Cancel`, callback_data: `cancel` },
-      ],
-    ],
-  },
-};
-export const commandList = [
-  { command: "start", description: "Start the bot" },
-  { command: "settings", description: "Show the settings menu" },
-  { command: "wallet", description: "View wallet info" },
-  { command: "invest", description: "Invest in Funds" },
-  { command: "sell", description: "Sell your token" },
-  { command: "referral", description: "Refer your friend" },
-  { command: "help", description: "Tips and faqs" },
-];
+import { confirmList, errorTitle } from "./config";
+import userService from "./service";
 
 export const welcome = async (
   chatId: number,
   botName: string,
   pin: boolean = false
 ) => {
-  const userInfo = await checkInfo(chatId);
+  const userInfo = await userService.getUserInfo(chatId);
 
   const { solPublicKey, ethPublicKey } = userInfo
-    ? await fetch(chatId, botName)
-    : await createWalletHelper(chatId, botName);
+    ? userInfo
+    : await userService.createWallet(chatId, botName);
 
   const title = `Harnessing the power of AI, xdebots offers multiple trading bot strategies that trade non-stop around the clock giving you an edge.
         
@@ -98,7 +49,7 @@ For more info on your wallet and to retrieve your private key, tap the wallet bu
 };
 
 export const refreshWallet = async (chatId: number) => {
-  const { solPublicKey, solBalance } = await fetch(chatId);
+  const { solPublicKey, solBalance } = await userService.getUserInfo(chatId);
   const title = `Successfully refreshed!
     
 Your TradingBot wallet address:
@@ -233,7 +184,7 @@ export const deposit = async () => {
 };
 
 export const sell = async (chatId: number) => {
-  const ownTokens = await getAllTokenList(chatId);
+  const ownTokens = await userService.getAllTokenList(chatId);
   if (ownTokens.length) {
     const title = `Token list you have in your wallet. Select token to sell.`;
     const content: {
@@ -263,9 +214,9 @@ export const sell = async (chatId: number) => {
   }
 };
 
-export const wallet = async (chatId: number) => {
+export const showWallet = async (chatId: number) => {
   const { solPublicKey, solBalance, ethPublicKey, ethBalance, arbBalance } =
-    await fetch(chatId);
+    await userService.getUserInfo(chatId);
   const title = `Your Wallet:
 
 SOL:
@@ -322,63 +273,63 @@ export const confirm = async (status: string) => {
   };
 };
 
-export const showKey = async (chatId: number) => {
-  const { solPrivateKey, ethPrivateKey } = await fetch(chatId);
-  const title = `Your Private Key is:
+// export const showKey = async (chatId: number) => {
+//   const { solPrivateKey, ethPrivateKey } = await fetch(chatId);
+//   const title = `Your Private Key is:
 
-SOL:
-<code>${solPrivateKey}</code>
+// SOL:
+// <code>${solPrivateKey}</code>
 
-ETH:
-<code>${ethPrivateKey}</code>
-    
-Delete this message once you are done.`;
+// ETH:
+// <code>${ethPrivateKey}</code>
 
-  const content = [[{ text: `Delete`, callback_data: `cancel` }]];
+// Delete this message once you are done.`;
 
-  return {
-    title,
-    content,
-  };
-};
+//   const content = [[{ text: `Delete`, callback_data: `cancel` }]];
 
-export const refer = async (chatId: number) => {
-  const { referralLink } = await fetch(chatId);
-  const title = `
-Refer your friends and earn 20% of their trading fees forever! 
+//   return {
+//     title,
+//     content,
+//   };
+// };
 
-Your referral link:
-<code>${referralLink}</code>
+// export const refer = async (chatId: number) => {
+//   const { referralLink } = await fetch(chatId);
+//   const title = `
+// Refer your friends and earn 20% of their trading fees forever!
 
-Referrals: 10
-Lifetime SOL earned. 423 ($9,302)
-Lifetime ETH earned. 1 ($3,302)
+// Your referral link:
+// <code>${referralLink}</code>
 
-Unclaimed rewards: $3,043
+// Referrals: 10
+// Lifetime SOL earned. 423 ($9,302)
+// Lifetime ETH earned. 1 ($3,302)
 
-Rewards are available to claim`;
+// Unclaimed rewards: $3,043
 
-  const content = [
-    [
-      { text: `Claim Rewards`, callback_data: "no" },
-      { text: `Manage bots`, callback_data: "manageBot" },
-    ],
-    [
-      { text: `Help`, callback_data: "help" },
-      { text: `Refer Friend`, callback_data: "refer" },
-      { text: `Settings`, callback_data: "settings" },
-    ],
-    [
-      { text: `Wallet`, callback_data: "wallet" },
-      { text: `Refresh`, callback_data: "refresh" },
-    ],
-  ];
+// Rewards are available to claim`;
 
-  return {
-    title,
-    content,
-  };
-};
+//   const content = [
+//     [
+//       { text: `Claim Rewards`, callback_data: "no" },
+//       { text: `Manage bots`, callback_data: "manageBot" },
+//     ],
+//     [
+//       { text: `Help`, callback_data: "help" },
+//       { text: `Refer Friend`, callback_data: "refer" },
+//       { text: `Settings`, callback_data: "settings" },
+//     ],
+//     [
+//       { text: `Wallet`, callback_data: "wallet" },
+//       { text: `Refresh`, callback_data: "refresh" },
+//     ],
+//   ];
+
+//   return {
+//     title,
+//     content,
+//   };
+// };
 
 export const manageBot = async (chatId: number) => {
   const title = `
@@ -453,7 +404,7 @@ Increase your Transaction Priority to improve transaction speed. Select preset o
     slippage2,
     priority,
     priorityAmount,
-  } = await getSetting(chatId);
+  } = await userService.getSetting(chatId);
   const content = [
     [{ text: `--- General settings ---`, callback_data: `general config` }],
     [
@@ -542,7 +493,7 @@ Increase your Transaction Priority to improve transaction speed. Select preset o
     slippage2,
     priority,
     priorityAmount,
-  } = await setSettings(chatId, category, value);
+  } = await userService.setSettings(chatId, category, value);
   const content = [
     [{ text: `--- General settings ---`, callback_data: `general config` }],
     [
@@ -600,93 +551,93 @@ Increase your Transaction Priority to improve transaction speed. Select preset o
   return { title, content };
 };
 
-export const getTokenInfo = async (
-  chatId: number,
-  address: string,
-  method: string
-) => {
-  try {
-    const result = await checkValidAddr(address);
-    if (result) {
-      if (method == "buy") {
-        const caption = `Name: ${result.name}
-Symbol: ${result.symbol}
-Address: <code>${address}</code>
-Decimals: ${result.decimals}
+// export const getTokenInfo = async (
+//   chatId: number,
+//   address: string,
+//   method: string
+// ) => {
+//   try {
+//     const result = await userService.checkValidAddr(address);
+//     if (result) {
+//       if (method == "buy") {
+//         const caption = `Name: ${result.name}
+// Symbol: ${result.symbol}
+// Address: <code>${address}</code>
+// Decimals: ${result.decimals}
 
-Price: ${result.USDprice} $ / ${result.SOLprice} SOL
+// Price: ${result.USDprice} $ / ${result.SOLprice} SOL
 
-Volume: 
-5m: ${result.priceX.m5} %, 1h: ${result.priceX.h1} %, 6h: ${result.priceX.h6} %, 1d: ${result.priceX.h24} %
-Market Cap: ${result.mcap} $`;
+// Volume:
+// 5m: ${result.priceX.m5} %, 1h: ${result.priceX.h1} %, 6h: ${result.priceX.h6} %, 1d: ${result.priceX.h24} %
+// Market Cap: ${result.mcap} $`;
 
-        const { buy1, buy2 } = await getSetting(chatId);
-        const content = [
-          [
-            {
-              text: `Explorer`,
-              url: `https://explorer.solana.com/address/${address}`,
-            },
-            {
-              text: `Birdeye`,
-              url: `https://birdeye.so/token/${address}?chain=solana`,
-            },
-          ],
-          [
-            { text: `Buy ${buy1} sol`, callback_data: `buyS:${address}` },
-            {
-              text: `Buy ${buy2} sol`,
-              callback_data: `buyL:${address}`,
-            },
-            { text: `Buy X sol`, callback_data: `buyX:${address}` },
-          ],
-          [{ text: `Close`, callback_data: `cancel` }],
-        ];
-        return { caption, content };
-      } else {
-        const balance = await getTokenBalance(chatId, address);
-        console.log(balance.value.uiAmount, result.decimals);
-        const caption = `Name: ${result.name}
-Symbol: ${result.symbol}
-Address: <code>${address}</code>
-Decimals: ${result.decimals}
+//         const { buy1, buy2 } = await userService.getSetting(chatId);
+//         const content = [
+//           [
+//             {
+//               text: `Explorer`,
+//               url: `https://explorer.solana.com/address/${address}`,
+//             },
+//             {
+//               text: `Birdeye`,
+//               url: `https://birdeye.so/token/${address}?chain=solana`,
+//             },
+//           ],
+//           [
+//             { text: `Buy ${buy1} sol`, callback_data: `buyS:${address}` },
+//             {
+//               text: `Buy ${buy2} sol`,
+//               callback_data: `buyL:${address}`,
+//             },
+//             { text: `Buy X sol`, callback_data: `buyX:${address}` },
+//           ],
+//           [{ text: `Close`, callback_data: `cancel` }],
+//         ];
+//         return { caption, content };
+//       } else {
+//         const balance = await userService.getTokenBalance(chatId, address);
+//         console.log(balance.value.uiAmount, result.decimals);
+//         const caption = `Name: ${result.name}
+// Symbol: ${result.symbol}
+// Address: <code>${address}</code>
+// Decimals: ${result.decimals}
 
-Price: ${result.USDprice} $ / ${result.SOLprice} SOL
+// Price: ${result.USDprice} $ / ${result.SOLprice} SOL
 
-Volume: 
-5m: ${result.priceX.m5} %, 1h: ${result.priceX.h1} %, 6h: ${result.priceX.h6} %, 1d: ${result.priceX.h24} %
-Market Cap: ${result.mcap} $`;
+// Volume:
+// 5m: ${result.priceX.m5} %, 1h: ${result.priceX.h1} %, 6h: ${result.priceX.h6} %, 1d: ${result.priceX.h24} %
+// Market Cap: ${result.mcap} $`;
 
-        const { sell1, sell2 } = await getSetting(chatId);
-        const content = [
-          [
-            {
-              text: `Explorer`,
-              url: `https://explorer.solana.com/address/${address}`,
-            },
-            {
-              text: `Birdeye`,
-              url: `https://birdeye.so/token/${address}?chain=solana`,
-            },
-          ],
-          [
-            { text: `Sell ${sell1} %`, callback_data: `sellS:${address}` },
-            {
-              text: `Sell ${sell2} %`,
-              callback_data: `sellL:${address}`,
-            },
-            { text: `Sell X %`, callback_data: `sellX:${address}` },
-          ],
-          [{ text: `Close`, callback_data: `cancel` }],
-        ];
-        return { caption, content };
-      }
-    } else return undefined;
-  } catch (e) {
-    console.log(e);
-    return undefined;
-  }
-};
+//         const { sell1, sell2 } = await getSetting(chatId);
+//         const content = [
+//           [
+//             {
+//               text: `Explorer`,
+//               url: `https://explorer.solana.com/address/${address}`,
+//             },
+//             {
+//               text: `Birdeye`,
+//               url: `https://birdeye.so/token/${address}?chain=solana`,
+//             },
+//           ],
+//           [
+//             { text: `Sell ${sell1} %`, callback_data: `sellS:${address}` },
+//             {
+//               text: `Sell ${sell2} %`,
+//               callback_data: `sellL:${address}`,
+//             },
+//             { text: `Sell X %`, callback_data: `sellX:${address}` },
+//           ],
+//           [{ text: `Close`, callback_data: `cancel` }],
+//         ];
+//         return { caption, content };
+//       }
+//     } else return undefined;
+//   } catch (e) {
+//     console.log(e);
+//     return undefined;
+//   }
+// };
 
 export const buyTokens = async (
   chatId: number,
@@ -694,7 +645,7 @@ export const buyTokens = async (
   address: string,
   type: string
 ) => {
-  const result = await buyTokenHelper(chatId, value, address, type);
+  const result = await userService.buyToken(chatId, value, address, type);
   return result;
 };
 

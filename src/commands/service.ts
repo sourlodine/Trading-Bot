@@ -1,44 +1,30 @@
 import * as solanaWeb3 from "@solana/web3.js";
-import {
-  TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  getTokenMetadata,
-} from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import bs58 from "bs58";
 import { ethers } from "ethers";
 import crypto from "crypto";
 import { encode } from "js-base64";
 import axios from "axios";
-import fs from "fs";
-import { fetch as fetchData } from "cross-fetch";
 
 import {
   RpcURL,
   userPath,
-  statusPath,
   userTokenPath,
   tokensPath,
-  logoPath,
   settingsPath,
   fee,
-  quoteURL,
   solAddr,
-  feeAccountAddr,
-  feeAccountSecret,
-  swapURL,
   txPath,
   poolListPath,
+  ServerURL,
 } from "../config";
 import {
   ISettings,
   IUserToken,
-  ITokenData,
   Iuser,
   initialSetting,
   IUserTokenList,
   ITxes,
-  IPair,
   IPairs,
   IPool,
 } from "../type";
@@ -49,9 +35,6 @@ import {
   tokenSwap,
   writeData,
 } from "../utils";
-import { toEditorSettings } from "typescript";
-import { LIQUIDITY_STATE_LAYOUT_V4 } from "@raydium-io/raydium-sdk";
-import axios from "axios";
 
 let userData: Iuser = {};
 let userTokens: IUserTokenList = {};
@@ -62,7 +45,7 @@ let poolList: IPool[] = [];
 
 const connection = new solanaWeb3.Connection(RpcURL);
 
-export const init = async () => {
+const init = async () => {
   userData = await readData(userPath);
   userTokens = await readData(userTokenPath);
   tokens = await readData(tokensPath);
@@ -71,85 +54,37 @@ export const init = async () => {
   poolList = await readData(poolListPath);
 };
 
-export const checkInfo = async (chatId: number) => {
+const getUserInfo = async (chatId: number) => {
   try {
-    const info = await axios.get(`${ServerURL}/user_info`, {
-      user_id: chatId;
-    }).then(res => res.data);
+    const info = await axios
+      .get(`${ServerURL}/user_info`, {
+        params: {
+          user_id: chatId,
+        },
+      })
+      .then((res) => res.data);
     return info;
   } catch (e) {
     return null;
   }
-  // if (!(chatId.toString() in settings)) {
-  //   settings[chatId] = initialSetting;
-  //   writeData(settings, settingsPath);
-  // }
-
-  // if (chatId.toString() in userData) return true;
-  // else false;
 };
 
-export const fetch = async (chatId: number, botName?: string) => {
-  let solBalance = 0;
+const createWallet = async (chatId: number, botName: string) => {
   try {
-    solBalance =
-      (await connection.getBalance(
-        new solanaWeb3.PublicKey(userData[chatId].solPublicKey)
-      )) / 1e9;
-    userData[chatId].solBalance = solBalance;
-    writeData(userData, userPath);
+    const info = await axios
+      .post(`${ServerURL}/wallet`, {
+        data: {
+          user_id: chatId,
+        },
+      })
+      .then((res) => res.data);
+    return info;
   } catch (e) {
-    console.error(e);
+    return null;
   }
-
-  return {
-    solPublicKey: userData[chatId].solPublicKey,
-    solPrivateKey: userData[chatId].solPrivateKey,
-    solBalance,
-    ethPublicKey: userData[chatId].ethPublicKey,
-    ethPrivateKey: userData[chatId].ethPrivateKey,
-    ethBalance: 0,
-    arbBalance: 0,
-    referralLink: userData[chatId].referralLink,
-  };
 };
 
-export const createWalletHelper = async (chatId: number, botName: string) => {
-  const newSolKeyPair = solanaWeb3.Keypair.generate();
-  const solPrivateKey = bs58.encode(Buffer.from(newSolKeyPair.secretKey));
-  const solPublicKey = newSolKeyPair.publicKey.toString();
-  const solBalance = 0;
-
-  const randomId = crypto.randomBytes(32).toString("hex");
-  const ethPrivateKey = "0x" + randomId;
-  const ethPublicKey = new ethers.Wallet(ethPrivateKey).address;
-  const ethBalance = 0;
-
-  const referralLink = `https://t.me/${botName}?ref=${encode(
-    chatId.toString()
-  )}`;
-
-  userData[chatId] = {
-    solPrivateKey,
-    solPublicKey,
-    solBalance,
-    ethPrivateKey,
-    ethPublicKey,
-    ethBalance,
-    referralLink,
-    referees: [],
-    referrer: "",
-  };
-  writeData(userData, userPath);
-  return {
-    solPublicKey,
-    solBalance,
-    ethPublicKey,
-    ethBalance,
-  };
-};
-
-export const importWalletHelper = async (
+const importWallet = async (
   chatId: number,
   privateKeyHex: string,
   botName: string
@@ -199,7 +134,7 @@ export const importWalletHelper = async (
   };
 };
 
-export const checkValidAddr = async (addr: string) => {
+const checkValidAddr = async (addr: string) => {
   try {
     const info = await tokenInfo(addr);
     if (!info) return;
@@ -226,7 +161,7 @@ export const checkValidAddr = async (addr: string) => {
   }
 };
 
-export const getSetting = async (chatId: number) => {
+const getSetting = async (chatId: number) => {
   if (chatId in settings) {
     settings = await readData(settingsPath);
   } else {
@@ -236,11 +171,7 @@ export const getSetting = async (chatId: number) => {
   return settings[chatId];
 };
 
-export const setSettings = async (
-  chatId: number,
-  category: string,
-  value?: any
-) => {
+const setSettings = async (chatId: number, category: string, value?: any) => {
   if (category == "announcement")
     settings[chatId]["announcement"] = !settings[chatId]["announcement"];
   else if (category == "priority") {
@@ -271,7 +202,7 @@ export const setSettings = async (
   return settings[chatId];
 };
 
-export const getTokenBalance = async (chatId: number, address: string) => {
+const getTokenBalance = async (chatId: number, address: string) => {
   const sourceAccount = await getAssociatedTokenAddress(
     new solanaWeb3.PublicKey(address),
     new solanaWeb3.PublicKey(userData[chatId].solPublicKey)
@@ -281,7 +212,7 @@ export const getTokenBalance = async (chatId: number, address: string) => {
   return info;
 };
 
-export const buyTokenHelper = async (
+const buyToken = async (
   chatId: number,
   value: string,
   tokenAddr: string,
@@ -388,7 +319,7 @@ export const buyTokenHelper = async (
   }
 };
 
-export const getAllTokenList = async (chatId: number) => {
+const getAllTokenList = async (chatId: number) => {
   userData = await readData(userPath);
   userTokens = await readData(userTokenPath);
 
@@ -433,19 +364,6 @@ export const getAllTokenList = async (chatId: number) => {
     writeData(userTokens, userTokenPath);
   }
   return tokensList;
-
-  // const tokenMetadata = await Promise.all(
-  //   tokenAddresses.map(async (tokenAddress) => {
-  //     const token = new Token(connection, tokenAddress, TOKEN_PROGRAM_ID);
-  //     const tokenInfo = await token.getMintInfo();
-  //     return {
-  //       tokenAddress: tokenAddress.toBase58(),
-  //       tokenName: tokenInfo.name,
-  //       tokenSymbol: tokenInfo.symbol,
-  //       tokenDecimals: tokenInfo.decimals,
-  //     };
-  //   })
-  // );
 };
 
 const getPoolId = async (token: string) => {
@@ -461,21 +379,18 @@ const getPoolId = async (token: string) => {
         (poolList[i].tokenB == token && poolList[i].tokenA == solAddr)
       ) {
         return poolList[i].pair;
-
-        // const account = await connection.getAccountInfo(new web3.PublicKey(poolList[i].pair))
-        // if (account) {console.log(LIQUIDITY_STATE_LAYOUT_V4.decode(account.data).swapBaseInAmount.toString())}
-        // const account = await connection.getBalance(new web3.PublicKey(poolList[i].pair))
-        // console.log(account, item.pair)
-        // if (poolList[i].pair == '58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2') {
-        //   // // const info = bs58.encode(account);
-        //   // const info = bs58.encode(account?.data!);
-        //   // console.log(info)
-        //   if (account) {
-        //     console.log(LIQUIDITY_STATE_LAYOUT_V4.decode(account.data).quoteVault.toString())
-        //   }
-        // }
       }
     }
   }
 };
 
+export default {
+  init,
+  getUserInfo,
+  createWallet,
+  importWallet,
+  getSetting,
+  setSettings,
+  buyToken,
+  getAllTokenList,
+};

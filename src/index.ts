@@ -2,29 +2,26 @@ import "dotenv/config";
 import TelegramBot, { CallbackQuery } from "node-telegram-bot-api";
 
 import {
-  commandList,
   welcome,
   settings,
-  wallet,
-  refer,
   help,
   invalid,
   invest,
-  getTokenInfo,
   sell,
   manageBot,
   deposit,
   newSettings,
   refreshWallet,
-  showKey,
   confirm,
   inputBuyAmount,
   buyTokens,
   inputSellAmount,
+  showWallet,
 } from "./commands";
 import { BotToken } from "./config";
-import { init } from "./commands/helper";
+import userService from "./commands/service";
 import { colorLog } from "./utils/log";
+import { commandList } from "./commands/config";
 
 const token = BotToken;
 const bot = new TelegramBot(token!, { polling: true });
@@ -39,7 +36,7 @@ bot.getMe().then((user) => {
 
 bot.setMyCommands(commandList);
 
-init();
+userService.init();
 
 bot.on(`message`, async (msg) => {
   const chatId = msg.chat.id!;
@@ -77,7 +74,7 @@ bot.on(`message`, async (msg) => {
 
       case "/wallet":
         await bot.deleteMessage(chatId, msgId);
-        result = await wallet(chatId);
+        result = await showWallet(chatId);
 
         await bot.sendMessage(chatId, result.title, {
           reply_markup: {
@@ -115,15 +112,15 @@ bot.on(`message`, async (msg) => {
         break;
 
       case "/referral":
-        await bot.deleteMessage(chatId, msgId);
-        result = await refer(chatId);
-        await bot.sendMessage(chatId, result.title, {
-          reply_markup: {
-            inline_keyboard: result.content,
-            resize_keyboard: true,
-          },
-          parse_mode: "HTML",
-        });
+        // await bot.deleteMessage(chatId, msgId);
+        // result = await refer(chatId);
+        // await bot.sendMessage(chatId, result.title, {
+        //   reply_markup: {
+        //     inline_keyboard: result.content,
+        //     resize_keyboard: true,
+        //   },
+        //   parse_mode: "HTML",
+        // });
 
         break;
 
@@ -170,30 +167,30 @@ bot.on("callback_query", async (query: CallbackQuery) => {
           parse_mode: "HTML",
         });
 
-        bot.once(`message`, async (msg) => {
-          const result = await getTokenInfo(chatId, msg.text!, "buy");
-          if (result)
-            await bot.sendMessage(chatId, result.caption, {
-              reply_markup: {
-                inline_keyboard: result.content,
-                resize_keyboard: true,
-              },
-              parse_mode: "HTML",
-            });
-          else {
-            const issue = invalid("inputBuyTokenAddress");
-            await bot.sendMessage(chatId, issue.title, {
-              reply_markup: {
-                inline_keyboard: issue.content,
-                resize_keyboard: true,
-              },
-              parse_mode: "HTML",
-            });
-          }
-          return;
-        });
+      // bot.once(`message`, async (msg) => {
+      //   const result = await getTokenInfo(chatId, msg.text!, "buy");
+      //   if (result)
+      //     await bot.sendMessage(chatId, result.caption, {
+      //       reply_markup: {
+      //         inline_keyboard: result.content,
+      //         resize_keyboard: true,
+      //       },
+      //       parse_mode: "HTML",
+      //     });
+      //   else {
+      //     const issue = invalid("inputBuyTokenAddress");
+      //     await bot.sendMessage(chatId, issue.title, {
+      //       reply_markup: {
+      //         inline_keyboard: issue.content,
+      //         resize_keyboard: true,
+      //       },
+      //       parse_mode: "HTML",
+      //     });
+      //   }
+      //   return;
+      // });
 
-        break;
+      // break;
 
       case "sell":
         await bot.sendMessage(chatId, (await sell(chatId)).title, {
@@ -233,9 +230,10 @@ bot.on("callback_query", async (query: CallbackQuery) => {
         break;
 
       case "wallet":
-        await bot.sendMessage(chatId, (await wallet(chatId)).title, {
+        const wallet = await showWallet(chatId);
+        await bot.sendMessage(chatId, wallet.title, {
           reply_markup: {
-            inline_keyboard: (await wallet(chatId)).content,
+            inline_keyboard: wallet.content,
             resize_keyboard: true,
           },
           parse_mode: "HTML",
@@ -265,25 +263,25 @@ bot.on("callback_query", async (query: CallbackQuery) => {
 
         break;
 
-      case "show":
-        await bot.sendMessage(chatId, (await showKey(chatId)).title, {
-          reply_markup: {
-            inline_keyboard: (await showKey(chatId)).content,
-            resize_keyboard: true,
-          },
-          parse_mode: "HTML",
-        });
+      // case "show":
+      //   await bot.sendMessage(chatId, (await showKey(chatId)).title, {
+      //     reply_markup: {
+      //       inline_keyboard: (await showKey(chatId)).content,
+      //       resize_keyboard: true,
+      //     },
+      //     parse_mode: "HTML",
+      //   });
 
-        break;
+      //   break;
 
       case "refer":
-        await bot.sendMessage(chatId, (await refer(chatId)).title, {
-          reply_markup: {
-            inline_keyboard: (await refer(chatId)).content,
-            resize_keyboard: true,
-          },
-          parse_mode: "HTML",
-        });
+        // await bot.sendMessage(chatId, (await refer(chatId)).title, {
+        //   reply_markup: {
+        //     inline_keyboard: (await refer(chatId)).content,
+        //     resize_keyboard: true,
+        //   },
+        //   parse_mode: "HTML",
+        // });
 
         break;
 
@@ -506,15 +504,15 @@ bot.on("callback_query", async (query: CallbackQuery) => {
       }
     } else if (action.startsWith("sell:")) {
       const address = action.split(":")[1];
-      const result = await getTokenInfo(chatId, address, "sell");
-      if (result)
-        await bot.sendMessage(chatId, result.caption, {
-          reply_markup: {
-            inline_keyboard: result.content,
-            resize_keyboard: true,
-          },
-          parse_mode: "HTML",
-        });
+      // const result = await getTokenInfo(chatId, address, "sell");
+      // if (result)
+      //   await bot.sendMessage(chatId, result.caption, {
+      //     reply_markup: {
+      //       inline_keyboard: result.content,
+      //       resize_keyboard: true,
+      //     },
+      //     parse_mode: "HTML",
+      //   });
     } else if (
       action.startsWith("sellS") ||
       action.startsWith("sellL") ||
