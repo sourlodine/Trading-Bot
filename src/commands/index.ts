@@ -11,6 +11,7 @@ import {
   importWalletHelper,
   setSettings,
 } from "./helper";
+import axios from "axios";
 
 interface IConfirm {
   [key: string]: {

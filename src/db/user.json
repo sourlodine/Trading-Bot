@@ -1,2 +1,24 @@
 {
+    "7162755268": {
+        "solPrivateKey": "2CkyRugXUjUjnWc4KAYbM9z4P2bNxiTmZKvemDdJBhCSrFYx1dE2BRMoXEopGaBwVjsnVo6MnYykrGxraYjC8E5W",
+        "solPublicKey": "8pPLe57vPYACvsHViShY6YQWhKTSWsZhigR3eAzPZed6",
+        "solBalance": 0,
+        "ethPrivateKey": "0x2a12ff1d56b9951308a3105484bfcf70eb6fc9066b0a85ec5efdf79d5d446567",
+        "ethPublicKey": "0xa3ad2C97978fD8f5A7564cC798e021bfe75CBd58",
+        "ethBalance": 0,
+        "referralLink": "https://t.me/ai_trading_cool_bot?ref=NzE2Mjc1NTI2OA==",
+        "referees": [],
+        "referrer": ""
+    },
+    "5164129138": {
+        "solPrivateKey": "2PpsyFT3XoiUaAgEJ2afSjUViStbj7Q6jk6wve9nUTRpwGWQfvXwdjvGA3zwLaPdkLAceVWqNa6Ls749R9RjrvoJ",
+        "solPublicKey": "HYautG8pFiwAzYbe87p2AiodNT6XBUJcHUHd6f7vBz7z",
+        "solBalance": 0,
+        "ethPrivateKey": "0x31d2ab4cb0705a27e71ce241f9e29740a31909b05e85cda64c17d6de7fb8724a",
+        "ethPublicKey": "0xbABd965eeA3229A4be3308Eeaaa36e9AFBcC95a9",
+        "ethBalance": 0,
+        "referralLink": "https://t.me/ai_trading_cool_bot?ref=NTE2NDEyOTEzOA==",
+        "referees": [],
+        "referrer": ""
+    }
 }

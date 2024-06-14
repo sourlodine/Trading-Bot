@@ -51,6 +51,7 @@ import {
 } from "../utils";
 import { toEditorSettings } from "typescript";
 import { LIQUIDITY_STATE_LAYOUT_V4 } from "@raydium-io/raydium-sdk";
+import axios from "axios";
 
 let userData: Iuser = {};
 let userTokens: IUserTokenList = {};
@@ -71,13 +72,21 @@ export const init = async () => {
 };
 
 export const checkInfo = async (chatId: number) => {
-  if (!(chatId.toString() in settings)) {
-    settings[chatId] = initialSetting;
-    writeData(settings, settingsPath);
+  try {
+    const info = await axios.get(`${ServerURL}/user_info`, {
+      user_id: chatId;
+    }).then(res => res.data);
+    return info;
+  } catch (e) {
+    return null;
   }
+  // if (!(chatId.toString() in settings)) {
+  //   settings[chatId] = initialSetting;
+  //   writeData(settings, settingsPath);
+  // }
 
-  if (chatId.toString() in userData) return true;
-  else false;
+  // if (chatId.toString() in userData) return true;
+  // else false;
 };
 
 export const fetch = async (chatId: number, botName?: string) => {
