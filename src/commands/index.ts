@@ -8,7 +8,9 @@ export const welcome = async (
 ) => {
   const userInfo = await userService.getUserInfo(chatId);
 
-  const { solPublicKey, ethPublicKey } = userInfo
+  console.log("userInfo", userInfo)
+
+  const { solPublicKey, address: ethPublicKey } = userInfo
     ? userInfo
     : await userService.createWallet(chatId, botName);
 

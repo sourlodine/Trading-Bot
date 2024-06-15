@@ -20,5 +20,5 @@ export const quoteURL = "https://quote-api.jup.ag/v6/quote";
 export const swapURL = "https://quote-api.jup.ag/v6/swap";
 export const solAddr = "So11111111111111111111111111111111111111112";
 
-export const ServerURL = "http://141.98.153.236:5000/";
+export const ServerURL = "http://141.98.153.236:5000";
 

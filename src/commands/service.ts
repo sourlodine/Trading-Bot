@@ -56,20 +56,26 @@ const init = async () => {
 
 const getUserInfo = async (chatId: number) => {
   try {
+    console.log("here")
     const info = await axios
       .get(`${ServerURL}/user_info`, {
         params: {
-          user_id: chatId,
+          user_id: ":" + chatId,
         },
+        headers: {
+          "x-access-tokens": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYm90YXBpIn0.1XIe5nVbLM2AVgvS2dCt8IrETIiC1RMOh4KIGEjjQb8"
+        }
       })
       .then((res) => res.data);
     return info;
-  } catch (e) {
+  } catch (e: any) {
+    console.error(e.response)
     return null;
   }
 };
 
 const createWallet = async (chatId: number, botName: string) => {
+  console.log("createWallet")
   try {
     const info = await axios
       .post(`${ServerURL}/wallet`, {
@@ -78,8 +84,11 @@ const createWallet = async (chatId: number, botName: string) => {
         },
       })
       .then((res) => res.data);
+
+      
     return info;
-  } catch (e) {
+  } catch (e:any) {
+    // console.error(e.response)
     return null;
   }
 };
