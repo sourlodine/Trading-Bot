@@ -43,6 +43,12 @@ let settings: ISettings = {};
 let tx: ITxes = {};
 let poolList: IPool[] = [];
 
+const headers = {
+  "Content-Type": "application/json",
+  "x-access-tokens":
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYm90YXBpIn0.1XIe5nVbLM2AVgvS2dCt8IrETIiC1RMOh4KIGEjjQb8",
+};
+
 const connection = new solanaWeb3.Connection(RpcURL);
 
 const init = async () => {
@@ -56,39 +62,107 @@ const init = async () => {
 
 const getUserInfo = async (chatId: number) => {
   try {
-    console.log("here")
     const info = await axios
       .get(`${ServerURL}/user_info`, {
         params: {
-          user_id: ":" + chatId,
+          user_id: chatId,
         },
-        headers: {
-          "x-access-tokens": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYm90YXBpIn0.1XIe5nVbLM2AVgvS2dCt8IrETIiC1RMOh4KIGEjjQb8"
-        }
+        headers,
       })
       .then((res) => res.data);
+
+    if (info?.error) return null;
     return info;
   } catch (e: any) {
-    console.error(e.response)
+    console.error(e.response);
     return null;
   }
 };
 
 const createWallet = async (chatId: number, botName: string) => {
-  console.log("createWallet")
+  console.log("createWallet");
   try {
     const info = await axios
-      .post(`${ServerURL}/wallet`, {
-        data: {
+      .post(
+        `${ServerURL}/wallet`,
+        {
+          user_id: chatId.toString(),
+        },
+        { headers }
+      )
+      .then((res) => res.data);
+
+    return info;
+  } catch (e: any) {
+    console.error(e.response);
+    return null;
+  }
+};
+
+const exportWallet = async (chatId: number) => {
+  try {
+    const info = await axios
+      .post(`${ServerURL}/export`, { user_id: chatId.toString() }, { headers })
+      .then((res) => res.data);
+
+    return info;
+  } catch (e: any) {
+    console.error(e.response);
+    return null;
+  }
+};
+
+const resetWallet = async (chatId: number) => {
+  try {
+    const info = await axios
+      .post(
+        `${ServerURL}/reset_wallet`,
+        { user_id: chatId.toString() },
+        { headers }
+      )
+      .then((res) => res.data);
+
+    return info;
+  } catch (e: any) {
+    console.error(e.response);
+    return null;
+  }
+};
+
+const depositWallet = async (chatId: number, amount: number, vault: string) => {
+  try {
+    const info = await axios
+      .post(
+        `${ServerURL}/deposit`,
+        { user_id: chatId.toString(), amount, vault },
+        { headers }
+      )
+      .then((res) => res.data);
+
+    return info;
+  } catch (e: any) {
+    console.error(e.response);
+    return e.response.data.message;
+  }
+};
+
+const getReferral = async (chatId: number) => {
+  try {
+    const info = await axios
+      .get(`${ServerURL}/get_user_id_hash`, {
+        params: {
           user_id: chatId,
+        },
+        headers: {
+          "x-access-tokens":
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYm90YXBpIn0.1XIe5nVbLM2AVgvS2dCt8IrETIiC1RMOh4KIGEjjQb8",
         },
       })
       .then((res) => res.data);
 
-      
     return info;
-  } catch (e:any) {
-    // console.error(e.response)
+  } catch (e: any) {
+    console.error(e.response);
     return null;
   }
 };
@@ -332,12 +406,12 @@ const getAllTokenList = async (chatId: number) => {
   userData = await readData(userPath);
   userTokens = await readData(userTokenPath);
 
-  const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-    new solanaWeb3.PublicKey(userData[chatId].solPublicKey),
-    {
-      programId: TOKEN_PROGRAM_ID,
-    }
-  );
+  // const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+  //   new solanaWeb3.PublicKey(userData[chatId].solPublicKey),
+  //   {
+  //     programId: TOKEN_PROGRAM_ID,
+  //   }
+  // );
 
   // if (!(chatId in userTokens)) userTokens[chatId] = []
   // for (let i = 0; i < tokenAccounts.value.length; i++) {
@@ -397,9 +471,14 @@ export default {
   init,
   getUserInfo,
   createWallet,
+  exportWallet,
+  resetWallet,
+  depositWallet,
+  getReferral,
   importWallet,
   getSetting,
   setSettings,
   buyToken,
   getAllTokenList,
 };
+

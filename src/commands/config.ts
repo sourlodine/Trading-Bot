@@ -24,7 +24,7 @@ export const confirmList: IConfirm = {
     title: "Are you sure you want to reset your wallet?",
     content: [
       [
-        { text: `Reset Wallet`, callback_data: `import` },
+        { text: `Reset Wallet`, callback_data: `resetWallet` },
         { text: `Cancel`, callback_data: `cancel` },
       ],
     ],
@@ -38,3 +38,4 @@ export const errorTitle: {
   inputTokenAmount: `Invalid amount. Make sure amount is correct.`,
   internal: `Invalid action, please try again.`,
 };
+

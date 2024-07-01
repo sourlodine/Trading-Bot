@@ -1,5 +1,6 @@
 import { confirmList, errorTitle } from "./config";
 import userService from "./service";
+import utils from "./utils";
 
 export const welcome = async (
   chatId: number,
@@ -8,30 +9,67 @@ export const welcome = async (
 ) => {
   const userInfo = await userService.getUserInfo(chatId);
 
-  console.log("userInfo", userInfo)
-
-  const { solPublicKey, address: ethPublicKey } = userInfo
+  const { address: ethPublicKey } = userInfo
     ? userInfo
     : await userService.createWallet(chatId, botName);
 
-  const title = `Harnessing the power of AI, xdebots offers multiple trading bot strategies that trade non-stop around the clock giving you an edge.
+  const results = await Promise.allSettled([
+    utils.getBalance("mainnet", ethPublicKey),
+    utils.getUsdcBalance("mainnet", ethPublicKey),
+    utils.getBalance("arbitrum", ethPublicKey),
+    utils.getUsdcBalance("arbitrum", ethPublicKey),
+  ]);
+  
+  const [ethBalance, ethUsdcBalance, arbBalance, arbUsdcBalance] = results.map((result) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    } else {
+      throw new Error(`Error getting balance: ${result.reason}`);
+    }
+  });
+
+  const isZero =
+    ethBalance == "0" &&
+    ethUsdcBalance == "0" &&
+    arbBalance == "0" &&
+    arbUsdcBalance == "0";
+
+  const title = `Invest in full-self trading funds with DAY Protocol.
         
-To get started with trading, fund your wallets:
+Select one of the following:
 
-SOL:
-<code>${solPublicKey}</code> (tap to copy)
+<code>1/ Bluechip Fund</code>
+Trading ~140 high volume crypto on Arbitrum
+<b>+3,000% APY</b>
+20% success fee
 
-ETH:
-<code>${ethPublicKey}</code> (tap to copy)
+${
+  isZero
+    ? `
+<b>Wallet Balance: $0</b>
 
-Once done tap refresh and your balance will appear here. Then you can setup some bots.
+<b>Deposit ETH to get started</b>
 
-For more info on your wallet and to retrieve your private key, tap the wallet button below. `;
+Address:
+<code>${ethPublicKey}</code>
+Balance:
+ETH: ${ethBalance} ETH, ${ethUsdcBalance} USDC
+ARB: ${arbBalance} ETH, ${arbUsdcBalance} USDC
+`
+    : `
+<i>☝ tap the fund name to invest.</i>
+
+<b>Wallet Balance</b>
+ETH: ${ethBalance} ETH, ${ethUsdcBalance} USDC
+ARB: ${arbBalance} ETH, ${arbUsdcBalance} USDC
+`
+}`;
 
   const content = [
+    [{ text: `=== Bluechip ===`, callback_data: "bluechip" }],
     [
       { text: `Invest in Funds`, callback_data: "invest" },
-      { text: `Manage Investments`, callback_data: "manage" },
+      { text: `Manage`, callback_data: "manageBot" },
     ],
     [
       { text: `Help`, callback_data: "help" },
@@ -51,20 +89,21 @@ For more info on your wallet and to retrieve your private key, tap the wallet bu
 };
 
 export const refreshWallet = async (chatId: number) => {
-  const { solPublicKey, solBalance } = await userService.getUserInfo(chatId);
+  const { address: ethPublicKey } = await userService.getUserInfo(chatId);
+  const ethBalance = await utils.getBalance("mainnet", ethPublicKey);
   const title = `Successfully refreshed!
     
 Your TradingBot wallet address:
-<code>${solPublicKey}</code>
+<code>${ethPublicKey}</code>
 
-Sol balance: ${solBalance} SOL`;
+Your balance: ${ethBalance} ETH`;
 
   const content = [
     [
-      {
-        text: `View on solscan`,
-        url: `https://solscan.io/account/${solPublicKey}`,
-      },
+      // {
+      //   text: `View on solscan`,
+      //   url: `https://solscan.io/account/${solPublicKey}`,
+      // },
       { text: `Refresh`, callback_data: `refresh` },
     ],
     // [{ text: `Withdraw all SOL`, callback_data: `withdraw` }, { text: `Withdraw X SOL`, callback_data: `withdrawX` }],
@@ -81,40 +120,152 @@ Sol balance: ${solBalance} SOL`;
   };
 };
 
-export const invest = async () => {
+export const resetWallet = async (chatId: number) => {
+  const { address: ethPublicKey, solPublicKey } = await userService.resetWallet(
+    chatId
+  );
+  const title = `Successfully Reseted!
+    
+Your TradingBot wallet address:
+<code>${ethPublicKey}</code>`;
+
+  const content = [
+    [
+      {
+        text: `With on etherscan`,
+        url: `https://etherscan.io/account/${ethPublicKey}`,
+      },
+    ],
+    [
+      { text: `⬅ Prev`, callback_data: `prev` },
+      { text: `ETH`, callback_data: `eth` },
+      { text: `Next ➡`, callback_data: `next` },
+    ],
+    [
+      { text: `Withdraw all Eth`, callback_data: `allWithdraw` },
+      { text: `Withdraw X Eth`, callback_data: `amountWithdraw` },
+    ],
+    [
+      { text: `Reset wallet`, callback_data: `reset` },
+      { text: `Export Private Key`, callback_data: `export` },
+    ],
+    [{ text: `Refresh`, callback_data: `refresh` }],
+  ];
+
+  return {
+    title,
+    content,
+  };
+};
+
+export const invest = async (chatId: number, botName: string) => {
+  const { address: ethPublicKey } = await userService.getUserInfo(chatId);
+  const ethBalance = await utils.getBalance("mainnet", ethPublicKey);
+  const ethUsdcBalance = await utils.getUsdcBalance("mainnet", ethPublicKey);
+
+  const arbBalance = await utils.getBalance("arbitrum", ethPublicKey);
+  const arbUsdcBalance = await utils.getUsdcBalance("arbitrum", ethPublicKey);
+
+  const isZero =
+    ethBalance == "0.0" &&
+    ethUsdcBalance == "0.0" &&
+    arbBalance == "0.0" &&
+    arbUsdcBalance == "0.0";
+
   const title = `
-  <b>Solana Memes Fund</b>
-stop loss triggered
-Executing trade...
-Transaction successful! ✅
-PNL: +31 SOL (300%)
+Invest in AI driven crypto funds with DAY Protocol.
+Select one of the following:
 
-Loading Funds..
-
-Invest in our AI-driven funds.
-Select one of the following funds:
-
-<b>1/ Bluechips</b>
+<a href="https://t.me/${botName}/bluechip" data-linkz-ai-ignore>1/ Bluechips Fund</a>
 trading newly launched solana memes. 
 <b>+3,000% APY</b>
 10% profit sharing
 
-<b>2/ Top Volatility fund</b>
-Most volatile of top 4500 coins by market cap`;
+${
+  isZero
+    ? `
+<b>Wallet Balance: $0</b>
 
-  const content = [
-    [{ text: `--- SELECT FUND ---`, callback_data: "no" }],
+<b>Deposit ETH to get started</b>
+
+Address:
+<code>${ethPublicKey}</code>
+Balance:
+ETH: ${ethBalance} ETH, ${ethUsdcBalance} USDC
+ARB: ${arbBalance} ETH, ${arbUsdcBalance} USDC
+`
+    : `
+<i>☝ tap the fund name to invest.</i>
+
+<b>Wallet Balance: ${ethUsdcBalance} USDC / ${ethBalance} ETH</b>
+`
+}`;
+
+  const content: any[] = [
+    // [{ text: `--- SELECT FUND ---`, callback_data: "no" }],
+    // [
+    //   { text: `Blue chips`, url: `https://etherscan.io/` },
+    //   // { text: `✅  Top volatility`, callback_data: "no" },
+    // ],
+    // [{ text: `--- ADD FUNDS ---`, callback_data: "no" }],
+    // [
+    //   { text: `✅ 1 ETH`, callback_data: "no" },
+    //   { text: `5 ETH`, callback_data: "no" },
+    //   { text: `X ETH`, callback_data: "no" },
+    // ],
+    // [{ text: `Invest`, callback_data: "invest" }],
+  ];
+
+  return {
+    title,
+    content,
+  };
+};
+
+export const bluechip = async (chatId: number, botName: string) => {
+  const { address: ethPublicKey } = await userService.getUserInfo(chatId);
+  const ethBalance = await utils.getBalance("mainnet", ethPublicKey);
+  const ethUsdcBalance = await utils.getUsdcBalance("mainnet", ethPublicKey);
+  console.log("ethBalance", ethBalance);
+  console.log("ethUsdcBalance", ethUsdcBalance);
+  const isZero = ethBalance == "0.0" && ethUsdcBalance == "0.0";
+  const title = `
+<b>Bluechip Fund</b>
+Trading ~140 high volume crypto on Arbitrum
+
+Wallet Balance: ${ethBalance} ETH, $${ethUsdcBalance} USDC 
+${
+  isZero
+    ? `<b>You do not have enough to invest. Deposit ETH into your wallets:</b>
+
+Ethereum: <code>${ethPublicKey}</code>`
+    : `
+<a href="https://t.me/${botName}/deposit" data-linkz-ai-ignore>Deposit</a>`
+}
+
+share this fund to earn 50% of fees:
+<code>t.me/${botName}?code=sdf3r23</code>
+`;
+
+  const content: any[] = [
     [
-      { text: `Blue chips`, callback_data: "no" },
-      { text: `✅  Top volatility`, callback_data: "no" },
+      { text: `Home`, callback_data: "welcome" },
+      { text: `Close`, callback_data: "cancel" },
     ],
-    [{ text: `--- ADD FUNDS ---`, callback_data: "no" }],
     [
-      { text: `✅ 1 SOL`, callback_data: "no" },
-      { text: `5 SOL`, callback_data: "no" },
-      { text: `X SOL`, callback_data: "no" },
+      { text: `Add 1 ETH`, callback_data: "deposit1" },
+      { text: `Add 5 ETH`, callback_data: "deposit5" },
+      { text: `Add X ETH`, callback_data: "no" },
     ],
-    [{ text: `Invest`, callback_data: "invest" }],
+    [
+      { text: `⬅ Prev`, callback_data: "welcome" },
+      { text: `Bluechip...`, callback_data: "bluechip" },
+      { text: `Next ➡`, callback_data: "next" },
+    ],
+    [
+      { text: `Refresh`, callback_data: "refresh" },
+      { text: `Withdraw funds`, callback_data: "withdraw" },
+    ],
   ];
 
   return {
@@ -185,6 +336,21 @@ export const deposit = async () => {
   };
 };
 
+const vaultAddress = "0xd4b61e0fd2f3f05745c50b90158aebed34e9cd1a";
+
+export const depositX = async (chatId: number, amount: number) => {
+  const res = await userService.depositWallet(chatId, amount, vaultAddress);
+  console.log(">>>", res);
+  const title = `${res}`;
+
+  const content: any[] = [];
+
+  return {
+    title,
+    content,
+  };
+};
+
 export const sell = async (chatId: number) => {
   const ownTokens = await userService.getAllTokenList(chatId);
   if (ownTokens.length) {
@@ -217,39 +383,42 @@ export const sell = async (chatId: number) => {
 };
 
 export const showWallet = async (chatId: number) => {
-  const { solPublicKey, solBalance, ethPublicKey, ethBalance, arbBalance } =
-    await userService.getUserInfo(chatId);
-  const title = `Your Wallet:
+  const { address: ethPublicKey } = await userService.getUserInfo(chatId);
+  const ethBalance = await utils.getBalance("mainnet", ethPublicKey);
+  const ethUsdcBalance = await utils.getUsdcBalance("mainnet", ethPublicKey);
 
-SOL:
-<code>${solPublicKey}</code> (tap to copy)
-Balance: ${solBalance} SOL
+  const arbBalance = await utils.getBalance("arbitrum", ethPublicKey);
+  const arbUsdcBalance = await utils.getUsdcBalance("arbitrum", ethPublicKey);
+
+  const title = `Your Wallet:
 
 ETH:
 <code>${ethPublicKey}</code> (tap to copy)
-Balance: ${ethBalance} ETH
+Balance: 
+${ethBalance} ETH
+${ethUsdcBalance} USDC
 
 Arbitrum:
 <code>${ethPublicKey}</code> (tap to copy)
-Balance: ${arbBalance} ETH
-
-${solBalance == 0 ? "Tap to copy the address and send SOL to deposit." : ""}`;
+Balance: 
+${arbBalance} ETH
+${arbUsdcBalance} USDC`;
 
   const content = [
     [
       {
-        text: `With on solscan`,
-        url: `https://solscan.io/account/${solPublicKey}`,
+        text: `With on etherscan`,
+        url: `https://etherscan.io/account/${ethPublicKey}`,
       },
     ],
     [
       { text: `⬅ Prev`, callback_data: `prev` },
-      { text: `SOL`, callback_data: `sol` },
+      { text: `ETH`, callback_data: `eth` },
       { text: `Next ➡`, callback_data: `next` },
     ],
     [
-      { text: `Withdraw all SOL`, callback_data: `allWithdraw` },
-      { text: `Withdraw X SOL`, callback_data: `amountWithdraw` },
+      { text: `Withdraw all ETH`, callback_data: `allWithdraw` },
+      { text: `Withdraw X ETH`, callback_data: `amountWithdraw` },
     ],
     [
       { text: `Reset wallet`, callback_data: `reset` },
@@ -275,63 +444,47 @@ export const confirm = async (status: string) => {
   };
 };
 
-// export const showKey = async (chatId: number) => {
-//   const { solPrivateKey, ethPrivateKey } = await fetch(chatId);
-//   const title = `Your Private Key is:
+export const showKey = async (chatId: number) => {
+  const { private_key: ethPrivateKey } = await userService.exportWallet(chatId);
+  const title = `Your Private Key is:
 
-// SOL:
-// <code>${solPrivateKey}</code>
+ETH:
+<code>${ethPrivateKey}</code>
 
-// ETH:
-// <code>${ethPrivateKey}</code>
+Delete this message once you are done.`;
 
-// Delete this message once you are done.`;
+  const content = [[{ text: `Delete`, callback_data: `cancel` }]];
 
-//   const content = [[{ text: `Delete`, callback_data: `cancel` }]];
+  return {
+    title,
+    content,
+  };
+};
 
-//   return {
-//     title,
-//     content,
-//   };
-// };
+export const refer = async (chatId: number, botName: string) => {
+  const { user_id_hash } = await userService.getReferral(chatId);
+  const referralLink = `https://t.me/${botName}?ref_by=${user_id_hash}`;
 
-// export const refer = async (chatId: number) => {
-//   const { referralLink } = await fetch(chatId);
-//   const title = `
-// Refer your friends and earn 20% of their trading fees forever!
+  const title = `
+Referrals:
 
-// Your referral link:
-// <code>${referralLink}</code>
+Your reflink: <code>${referralLink}</code>
 
-// Referrals: 10
-// Lifetime SOL earned. 423 ($9,302)
-// Lifetime ETH earned. 1 ($3,302)
+Referrals: 10
 
-// Unclaimed rewards: $3,043
+Lifetime USDC earned: $0.00
 
-// Rewards are available to claim`;
+Rewards are updated at least every 24 hours.
 
-//   const content = [
-//     [
-//       { text: `Claim Rewards`, callback_data: "no" },
-//       { text: `Manage bots`, callback_data: "manageBot" },
-//     ],
-//     [
-//       { text: `Help`, callback_data: "help" },
-//       { text: `Refer Friend`, callback_data: "refer" },
-//       { text: `Settings`, callback_data: "settings" },
-//     ],
-//     [
-//       { text: `Wallet`, callback_data: "wallet" },
-//       { text: `Refresh`, callback_data: "refresh" },
-//     ],
-//   ];
+Refer your friends and earn 30% of their fees.`;
 
-//   return {
-//     title,
-//     content,
-//   };
-// };
+  const content = [[{ text: `Close`, callback_data: "cancel" }]];
+
+  return {
+    title,
+    content,
+  };
+};
 
 export const manageBot = async (chatId: number) => {
   const title = `
@@ -359,7 +512,7 @@ share this fund to earn 50% of fees:
   const content = [
     [
       { text: `Add funds`, callback_data: "deposit" },
-      { text: `Reduce funds`, callback_data: "manageBot" },
+      { text: `Reduce funds`, callback_data: "no" },
     ],
     [
       { text: `⬅ Prev`, callback_data: "prev" },
@@ -380,21 +533,7 @@ share this fund to earn 50% of fees:
 };
 
 export const settings = async (chatId: number) => {
-  const title = `Settings
-
-GENERAL SETTINGS
-Honest bot Announcements: Occasional announcements. Tap to toggle.
-Minimum Position Value: Minimum position value to show in portfolio. Will hide tokens below this threshhold. Tap to edit.
-
-BUTTONS CONFIG
-Customize your buy and sell buttons for buy token and manage position. Tap to edit.
-
-SLIPPAGE CONFIG
-Customize your slippage settings for buys and sells. Tap to edit.
-Max Price Impact is to protect against trades in extremely illiquid pools.
-
-TRANSACTION PRIORITY
-Increase your Transaction Priority to improve transaction speed. Select preset or tap to edit.`;
+  const title = `Settings`;
 
   const {
     announcement,
@@ -407,59 +546,7 @@ Increase your Transaction Priority to improve transaction speed. Select preset o
     priority,
     priorityAmount,
   } = await userService.getSetting(chatId);
-  const content = [
-    [{ text: `--- General settings ---`, callback_data: `general config` }],
-    [
-      { text: `Announcements`, callback_data: `announcement config` },
-      {
-        text: `${announcement ? "🟢 Enable" : "🔴 Disable"}`,
-        callback_data: `announcement`,
-      },
-    ],
-    [{ text: `--- Buy Amount Config ---`, callback_data: `buy config` }],
-    [
-      { text: `✎ Left: ${buy1} SOL`, callback_data: `buy1` },
-      {
-        text: `✎ Right: ${buy2} SOL`,
-        callback_data: `buy2`,
-      },
-    ],
-    [{ text: `--- Sell Amount Config ---`, callback_data: `sell config` }],
-    [
-      { text: `✎ Left: ${sell1} %`, callback_data: `sell1` },
-      {
-        text: `✎ Right: ${sell2} %`,
-        callback_data: `sell2`,
-      },
-    ],
-    [
-      {
-        text: `--- Slippage Percentage Config ---`,
-        callback_data: `slippage config`,
-      },
-    ],
-    [
-      { text: `✎ Buy: ${slippage1} %`, callback_data: `slippage1` },
-      {
-        text: `✎ Sell: ${slippage2} %`,
-        callback_data: `slippage2`,
-      },
-    ],
-    [
-      {
-        text: `--- Transaction Priority Config ---`,
-        callback_data: `priority config`,
-      },
-    ],
-    [
-      { text: `⇌ ${priority}`, callback_data: `priority` },
-      {
-        text: `✎ ${priorityAmount} SOL`,
-        callback_data: `priorityAmount`,
-      },
-    ],
-    [{ text: `Close`, callback_data: `cancel` }],
-  ];
+  const content = [[{ text: `Close`, callback_data: `cancel` }]];
 
   return { title, content };
 };
@@ -683,3 +770,4 @@ No, they are all the same bot and you can use them interchangeably.
 And Trading Bot has also the feature of addtional fee for increasing transaction priority.`;
   return title;
 };
+

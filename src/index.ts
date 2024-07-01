@@ -6,7 +6,6 @@ import {
   settings,
   help,
   invalid,
-  invest,
   sell,
   manageBot,
   deposit,
@@ -17,6 +16,12 @@ import {
   buyTokens,
   inputSellAmount,
   showWallet,
+  refer,
+  showKey,
+  resetWallet,
+  invest,
+  bluechip,
+  depositX,
 } from "./commands";
 import { BotToken } from "./config";
 import userService from "./commands/service";
@@ -88,7 +93,7 @@ bot.on(`message`, async (msg) => {
 
       case "/invest":
         await bot.deleteMessage(chatId, msgId);
-        result = await invest();
+        result = await invest(chatId, botName);
         await bot.sendMessage(chatId, result.title, {
           reply_markup: {
             inline_keyboard: result.content,
@@ -159,9 +164,9 @@ bot.on("callback_query", async (query: CallbackQuery) => {
     let result;
     switch (action) {
       case "invest":
-        await bot.sendMessage(chatId, (await invest()).title, {
+        await bot.sendMessage(chatId, (await invest(chatId, botName)).title, {
           reply_markup: {
-            inline_keyboard: (await invest()).content,
+            inline_keyboard: (await invest(chatId, botName)).content,
             resize_keyboard: true,
           },
           parse_mode: "HTML",
@@ -191,6 +196,17 @@ bot.on("callback_query", async (query: CallbackQuery) => {
       // });
 
       // break;
+
+      case "bluechip":
+        await bot.sendMessage(chatId, (await bluechip(chatId, botName)).title, {
+          reply_markup: {
+            inline_keyboard: (await bluechip(chatId, botName)).content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
+
+        break;
 
       case "sell":
         await bot.sendMessage(chatId, (await sell(chatId)).title, {
@@ -229,6 +245,42 @@ bot.on("callback_query", async (query: CallbackQuery) => {
 
         break;
 
+      case "deposit1":
+        result = await depositX(chatId, 1);
+        await bot.sendMessage(chatId, result.title, {
+          reply_markup: {
+            inline_keyboard: result.content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
+
+        break;
+
+      case "deposit5":
+        result = await depositX(chatId, 5);
+        await bot.sendMessage(chatId, result.title, {
+          reply_markup: {
+            inline_keyboard: result.content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
+
+        break;
+
+      case "depositX":
+        result = await depositX(chatId, 2);
+        await bot.sendMessage(chatId, result.title, {
+          reply_markup: {
+            inline_keyboard: result.content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
+
+        break;
+
       case "wallet":
         const wallet = await showWallet(chatId);
         await bot.sendMessage(chatId, wallet.title, {
@@ -252,6 +304,19 @@ bot.on("callback_query", async (query: CallbackQuery) => {
 
         break;
 
+      case "resetWallet":
+        await bot.deleteMessage(chatId, msgId);
+        result = await resetWallet(chatId);
+        await bot.sendMessage(chatId, result.title, {
+          reply_markup: {
+            inline_keyboard: result.content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
+
+        break;
+
       case "export":
         await bot.sendMessage(chatId, (await confirm("exportKey")).title, {
           reply_markup: {
@@ -263,25 +328,26 @@ bot.on("callback_query", async (query: CallbackQuery) => {
 
         break;
 
-      // case "show":
-      //   await bot.sendMessage(chatId, (await showKey(chatId)).title, {
-      //     reply_markup: {
-      //       inline_keyboard: (await showKey(chatId)).content,
-      //       resize_keyboard: true,
-      //     },
-      //     parse_mode: "HTML",
-      //   });
+      case "show":
+        await bot.deleteMessage(chatId, msgId);
+        await bot.sendMessage(chatId, (await showKey(chatId)).title, {
+          reply_markup: {
+            inline_keyboard: (await showKey(chatId)).content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
 
-      //   break;
+        break;
 
       case "refer":
-        // await bot.sendMessage(chatId, (await refer(chatId)).title, {
-        //   reply_markup: {
-        //     inline_keyboard: (await refer(chatId)).content,
-        //     resize_keyboard: true,
-        //   },
-        //   parse_mode: "HTML",
-        // });
+        await bot.sendMessage(chatId, (await refer(chatId, botName)).title, {
+          reply_markup: {
+            inline_keyboard: (await refer(chatId, botName)).content,
+            resize_keyboard: true,
+          },
+          parse_mode: "HTML",
+        });
 
         break;
 
@@ -565,3 +631,4 @@ bot.on("callback_query", async (query: CallbackQuery) => {
     });
   }
 });
+
